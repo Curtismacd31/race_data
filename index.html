@@ -3,36 +3,96 @@
 <head>
   <title>Race Editor</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    textarea { width: 100%; height: 500px; font-family: monospace; }
+    body { font-family: sans-serif; padding: 20px; max-width: 1000px; margin: auto; }
+    select, input { padding: 5px; margin: 5px 0; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
     button { padding: 10px 20px; margin-top: 10px; }
   </style>
 </head>
 <body>
   <h1>Race Editor</h1>
-  <textarea id="jsonBox"></textarea>
-  <br/>
-  <button onclick="save()">Save Changes</button>
-  <p id="status"></p>
-  <script>
-    fetch('/api/races')
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('jsonBox').value = JSON.stringify(data, null, 2);
-      });
 
-    function save() {
-      const json = document.getElementById('jsonBox').value;
-      fetch('/api/save', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: json
-      }).then(res => res.text()).then(msg => {
-        document.getElementById('status').textContent = msg;
-      }).catch(err => {
-        document.getElementById('status').textContent = 'Failed to save';
+  <label for="raceSelector">Select Race:</label>
+  <select id="raceSelector"></select>
+
+  <table id="raceTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Horse Name</th>
+        <th>Driver</th>
+        <th>Trainer</th>
+        <th>Owner</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <button onclick="save()">💾 Save Changes</button>
+  <p id="status"></p>
+
+  <script>
+    let data = {};
+    let currentRaceIndex = -1;
+
+    async function loadData() {
+      const res = await fetch('/api/races');
+      data = await res.json();
+      const selector = document.getElementById('raceSelector');
+      data.race.forEach((r, i) => {
+        const option = document.createElement('option');
+        option.value = i;
+        option.text = "Race " + r.raceNumber;
+        selector.appendChild(option);
+      });
+      selector.onchange = () => loadRace(selector.value);
+      if (data.race.length > 0) loadRace(0);
+    }
+
+    function loadRace(index) {
+      currentRaceIndex = index;
+      const tbody = document.querySelector('#raceTable tbody');
+      tbody.innerHTML = '';
+      const racers = data.race[index].racers;
+      racers.forEach((racer, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${i+1}</td>
+          <td><input value="${racer.horseName || ''}"/></td>
+          <td><input value="${racer.driverName || ''}"/></td>
+          <td><input value="${racer.trainerName || ''}"/></td>
+          <td><input value="${racer.ownerName || ''}"/></td>
+        `;
+        tbody.appendChild(row);
       });
     }
+
+    async function save() {
+      if (currentRaceIndex < 0) return;
+      const inputs = document.querySelectorAll('#raceTable tbody tr');
+      const updated = [];
+      inputs.forEach(row => {
+        const cells = row.querySelectorAll('input');
+        updated.push({
+          horseName: cells[0].value,
+          driverName: cells[1].value,
+          trainerName: cells[2].value,
+          ownerName: cells[3].value
+        });
+      });
+      data.race[currentRaceIndex].racers = updated;
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data, null, 2)
+      });
+      const msg = await res.text();
+      document.getElementById('status').textContent = msg;
+    }
+
+    loadData();
   </script>
 </body>
 </html>
