@@ -36,6 +36,7 @@
   <script>
     let data = {};
     let currentRaceIndex = -1;
+    let originalDrivers = [];
 
     async function loadData() {
       const res = await fetch('/api/races');
@@ -47,8 +48,14 @@
         option.text = "Race " + r.raceNumber;
         selector.appendChild(option);
       });
-      selector.onchange = () => loadRace(selector.value);
-      if (data.race.length > 0) loadRace(0);
+      selector.onchange = () => {
+        postCurrentRace(data.race[selector.value].raceNumber);
+        loadRace(selector.value);
+      };
+      if (data.race.length > 0) {
+        postCurrentRace(data.race[0].raceNumber);
+        loadRace(0);
+      }
     }
 
     function loadRace(index) {
@@ -56,6 +63,7 @@
       const tbody = document.querySelector('#raceTable tbody');
       tbody.innerHTML = '';
       const racers = data.race[index].racers;
+      originalDrivers = racers.map(r => r.driverName || "");
       racers.forEach((racer, i) => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -69,6 +77,14 @@
       });
     }
 
+    async function postCurrentRace(raceNumber) {
+      await fetch('/api/currentRacer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ currentRace: raceNumber })
+      });
+    }
+
     async function save() {
       if (currentRaceIndex < 0) return;
       const tbodyRows = document.querySelectorAll('#raceTable tbody tr');
@@ -79,7 +95,13 @@
           const field = input.dataset.field;
           updates[field] = input.value;
         });
-        return { ...original, ...updates }; // merge updates into original
+
+        // Add driverNameMat only if driver changed
+        if (updates.driverName !== originalDrivers[idx]) {
+          updates.driverNameMat = `{M:DRIVER_CHANGE} ${updates.driverName}`;
+        }
+
+        return { ...original, ...updates };
       });
 
       data.race[currentRaceIndex].racers = updatedRacers;
