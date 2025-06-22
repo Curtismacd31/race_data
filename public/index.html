@@ -4,7 +4,7 @@
   <title>Race Editor</title>
   <style>
     body { font-family: sans-serif; padding: 20px; max-width: 1000px; margin: auto; }
-    select, input, datalist { padding: 5px; margin: 5px 0; }
+    select, input, datalist, button { padding: 5px; margin: 5px 0; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background-color: #f2f2f2; }
@@ -13,6 +13,13 @@
 </head>
 <body>
   <h1>Race Editor</h1>
+
+  <label for="xmlFile">📂 Load XML File:</label>
+  <input type="file" id="xmlFile" accept=".xml" />
+  <button onclick="uploadXml()">Upload & Convert</button>
+  <p id="uploadStatus"></p>
+
+  <hr/>
 
   <label for="raceSelector">Select Race:</label>
   <select id="raceSelector"></select>
@@ -43,7 +50,12 @@
     async function loadData() {
       const res = await fetch('/api/races');
       data = await res.json();
+      updateUI();
+    }
+
+    function updateUI() {
       const selector = document.getElementById('raceSelector');
+      selector.innerHTML = '';
       data.race.forEach((r, i) => {
         const option = document.createElement('option');
         option.value = i;
@@ -67,6 +79,7 @@
         });
       });
       const driverList = document.getElementById('driverList');
+      driverList.innerHTML = '';
       driverSet.forEach(name => {
         const opt = document.createElement('option');
         opt.value = name;
@@ -84,10 +97,10 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${i+1}</td>
-          <td><input data-field="horseName" value="${racer.racerName || ''}"/></td>
+          <td><input data-field="horseName" value="${racer.horseName || ''}"/></td>
           <td><input data-field="driverName" list="driverList" value="${racer.driverName || ''}"/></td>
           <td><input data-field="trainerName" value="${racer.trainerName || ''}"/></td>
-          <td><input data-field="ownerName" value="${racer.owner || ''}"/></td>
+          <td><input data-field="ownerName" value="${racer.ownerName || ''}"/></td>
         `;
         tbody.appendChild(row);
       });
@@ -128,6 +141,29 @@
       });
       const msg = await res.text();
       document.getElementById('status').textContent = msg;
+    }
+
+    async function uploadXml() {
+      const fileInput = document.getElementById('xmlFile');
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/uploadXml', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        data = json;
+        updateUI();
+        document.getElementById('uploadStatus').textContent = '✅ XML successfully converted and loaded.';
+      } else {
+        document.getElementById('uploadStatus').textContent = '❌ Failed to convert XML.';
+      }
     }
 
     loadData();
