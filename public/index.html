@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <h1>Race Editor - CUJO ENT</h1>
+  <h1>Race Editor</h1>
 
   <label for="raceSelector">Select Race:</label>
   <select id="raceSelector"></select>
@@ -60,10 +60,10 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${i+1}</td>
-          <td><input value="${racer.horseName || ''}"/></td>
-          <td><input value="${racer.driverName || ''}"/></td>
-          <td><input value="${racer.trainerName || ''}"/></td>
-          <td><input value="${racer.ownerName || ''}"/></td>
+          <td><input data-field="horseName" value="${racer.horseName || ''}"/></td>
+          <td><input data-field="driverName" value="${racer.driverName || ''}"/></td>
+          <td><input data-field="trainerName" value="${racer.trainerName || ''}"/></td>
+          <td><input data-field="ownerName" value="${racer.ownerName || ''}"/></td>
         `;
         tbody.appendChild(row);
       });
@@ -71,18 +71,19 @@
 
     async function save() {
       if (currentRaceIndex < 0) return;
-      const inputs = document.querySelectorAll('#raceTable tbody tr');
-      const updated = [];
-      inputs.forEach(row => {
-        const cells = row.querySelectorAll('input');
-        updated.push({
-          horseName: cells[0].value,
-          driverName: cells[1].value,
-          trainerName: cells[2].value,
-          ownerName: cells[3].value
+      const tbodyRows = document.querySelectorAll('#raceTable tbody tr');
+      const updatedRacers = data.race[currentRaceIndex].racers.map((original, idx) => {
+        const inputs = tbodyRows[idx].querySelectorAll('input');
+        const updates = {};
+        inputs.forEach(input => {
+          const field = input.dataset.field;
+          updates[field] = input.value;
         });
+        return { ...original, ...updates }; // merge updates into original
       });
-      data.race[currentRaceIndex].racers = updated;
+
+      data.race[currentRaceIndex].racers = updatedRacers;
+
       const res = await fetch('/api/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
