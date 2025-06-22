@@ -4,7 +4,7 @@
   <title>Race Editor</title>
   <style>
     body { font-family: sans-serif; padding: 20px; max-width: 1000px; margin: auto; }
-    select, input { padding: 5px; margin: 5px 0; }
+    select, input, datalist { padding: 5px; margin: 5px 0; }
     table { border-collapse: collapse; width: 100%; margin-top: 20px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     th { background-color: #f2f2f2; }
@@ -33,6 +33,8 @@
   <button onclick="save()">💾 Save Changes</button>
   <p id="status"></p>
 
+  <datalist id="driverList"></datalist>
+
   <script>
     let data = {};
     let currentRaceIndex = -1;
@@ -56,6 +58,20 @@
         postCurrentRace(data.race[0].raceNumber);
         loadRace(0);
       }
+
+      // Populate driver datalist
+      const driverSet = new Set();
+      data.race.forEach(race => {
+        race.racers.forEach(r => {
+          if (r.driverName) driverSet.add(r.driverName.trim());
+        });
+      });
+      const driverList = document.getElementById('driverList');
+      driverSet.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        driverList.appendChild(opt);
+      });
     }
 
     function loadRace(index) {
@@ -68,10 +84,10 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${i+1}</td>
-          <td><input data-field="horseName" value="${racer.racerName || ''}"/></td>
-          <td><input data-field="driverName" value="${racer.driverName || ''}"/></td>
+          <td><input data-field="horseName" value="${racer.horseName || ''}"/></td>
+          <td><input data-field="driverName" list="driverList" value="${racer.driverName || ''}"/></td>
           <td><input data-field="trainerName" value="${racer.trainerName || ''}"/></td>
-          <td><input data-field="ownerName" value="${racer.owner || ''}"/></td>
+          <td><input data-field="ownerName" value="${racer.ownerName || ''}"/></td>
         `;
         tbody.appendChild(row);
       });
@@ -96,7 +112,6 @@
           updates[field] = input.value;
         });
 
-        // Add driverNameMat only if driver changed
         if (updates.driverName !== originalDrivers[idx]) {
           updates.driverNameMat = `{M:DRIVER_CHANGE} ${updates.driverName}`;
         }
