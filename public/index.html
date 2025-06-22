@@ -84,10 +84,10 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${i+1}</td>
-          <td><input data-field="horseName" value="${racer.horseName || ''}"/></td>
+          <td><input data-field="horseName" value="${racer.racerName || ''}"/></td>
           <td><input data-field="driverName" list="driverList" value="${racer.driverName || ''}"/></td>
           <td><input data-field="trainerName" value="${racer.trainerName || ''}"/></td>
-          <td><input data-field="ownerName" value="${racer.ownerName || ''}"/></td>
+          <td><input data-field="ownerName" value="${racer.owner || ''}"/></td>
         `;
         tbody.appendChild(row);
       });
