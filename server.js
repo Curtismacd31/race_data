@@ -72,4 +72,16 @@ app.post('/api/uploadXml', upload.single('file'), async (req, res) => {
   }
 });
 
+let currentRace = null;
+
+app.post('/api/currentRacer', express.json(), (req, res) => {
+  currentRace = req.body.currentRace;
+  res.send("Current race updated");
+});
+
+app.get('/api/currentRacer', (req, res) => {
+  res.json({ currentRace });
+});
+
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
