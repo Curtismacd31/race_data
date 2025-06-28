@@ -162,7 +162,20 @@
       if (res.ok) {
         const json = await res.json();
         data = json;
+        document.getElementById('uploadStatus').textContent = '✅ XML successfully converted and loaded.';
+        
+        // Refresh UI
         updateUI();
+        
+        // Set first race selected and trigger table
+        if (data.race.length > 0) {
+          const selector = document.getElementById('raceSelector');
+          selector.value = 0;
+          currentRaceIndex = 0;
+          postCurrentRace(data.race[0].raceNumber);
+          loadRace(0);
+        }
+
         document.getElementById('uploadStatus').textContent = '✅ XML successfully converted and loaded.';
       } else {
         document.getElementById('uploadStatus').textContent = '❌ Failed to convert XML.';
