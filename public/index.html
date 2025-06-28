@@ -67,9 +67,12 @@
         loadRace(selector.value);
       };
       if (data.race.length > 0) {
+        selector.value = 0; // ⬅️ Add this line
+        currentRaceIndex = 0;
         postCurrentRace(data.race[0].raceNumber);
         loadRace(0);
       }
+
 
       // Populate driver datalist
       const driverSet = new Set();
